@@ -1,0 +1,12 @@
+libringbuffer
+
+libringbuffers - this is an open source ringbuffer suite for simple operation of data type operation.
+
+It provides a common function list for identical operation across many 
+
+
+TODO
+
+1. Amend the read and writes to allow for overlapping the zero point. 
+2. Make generic object / void data element ring buffers.
+3. 
