@@ -1,2 +1,5 @@
 .version
 .tarball-version
+configure
+aclocal.m4
+

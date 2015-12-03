@@ -1,8 +1,34 @@
 libringbuffer
 
+http://techdiagnosys.blogspot.ca/2015/11/ring-buffers-in-gnu-c-from-learn-c-hard.html
+
 libringbuffers - this is an open source ringbuffer suite for simple operation of data type operation.
 
 It provides a common function list for identical operation across many 
+
+
+I took the ring buffers exercise from  http://c.learncodethehardway.org/book/
+and I fixed it and expanded it. Not that it wasn't a good starting point but it was a good learning function list I didn't know how ring buffers worked.  I wanted to understand how ring buffers work and they do make sense for a lot of string reads and writes.
+
+I had to fix some faulty logic in the functions, and I  took out the references to the bstring library in favour of GNU C and I put it all into an autotools format like I do.  In this way, one can expand and improve the code for open source applications. Of course then I open source the modified version and put in on GIT.
+
+I had one comment about his code.
+
+
+Note; one way to fool a compiler is to put function calls into define statements.  Example from his code:
+
+#define RingBuffer_puts(B, D) RingBuffer_write((B), bdata((D)), blength((D)))
+
+
+
+Now if this is the only reference to the bstring library, then it might be missed by compilers. GCC choked on this and missed it up until library linking. Otherwise it was a well written library function set.
+
+My ringbuffers expand the original thinking.
+
+ In Zed A. Shaw's original string of chars case the ring buffer is a conceptual ring of memory each one memory space wide.  Increase one memory increases one char.   But in my version there is an analog of a ring buffer of ROWS as the memory element in a ring where the row size and element size are arbitrary and determined by type. This allows one to conduct matrix and vector multiplications to them with pointers aimed at specific rows.
+
+
+You can find my ringbuffers version here.  GNU Ring Buffers 
 
 
 TODO
