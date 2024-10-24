@@ -49,7 +49,7 @@
 *
 *   @code
 *   #define myQ_SIZE    64
-*  
+*
 *   volatile struct
 *   {
 *       uint8_t     m_getIdx;
@@ -93,9 +93,9 @@
 /* ---- Constants and Types ---------------------------------------------- */
 typedef volatile struct
 {
-       uint8_t     m_getIdx;
-       uint8_t     m_putIdx;
-       uint8_t     m_entry[ myQ_SIZE ];
+    uint8_t     m_getIdx;
+    uint8_t     m_putIdx;
+    uint8_t     m_entry[ myQ_SIZE ];
 } Q_t;
 
 /**
@@ -208,13 +208,25 @@ public:
         m_getIdx = m_putIdx = 0;
     }
 
-    IndexType Len() const   { return m_putIdx - m_getIdx; }
+    IndexType Len() const
+    {
+        return m_putIdx - m_getIdx;
+    }
 
-    bool IsEmpty() const    { return Len() == 0; }
-    bool IsFull() const     { return Len() == Size; }
-    bool Error() const      { return Len() > Size; }
+    bool IsEmpty() const
+    {
+        return Len() == 0;
+    }
+    bool IsFull() const
+    {
+        return Len() == Size;
+    }
+    bool Error() const
+    {
+        return Len() > Size;
+    }
 
-    void Push( EntryType val )  
+    void Push( EntryType val )
     {
         m_entry[ m_putIdx++ & ( Size - 1 )] = val;
     }

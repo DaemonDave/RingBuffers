@@ -1,6 +1,6 @@
-/*  
+/*
  * Double ring buffer
- * 
+ *
  * */
 #include <assert.h>
 #include <stdio.h>
@@ -12,11 +12,11 @@
 
 typedef struct
 {
-		// the data area
+    // the data area
     double ** buffer;
     // the number of rows in the entire entry
     unsigned int length;
-    // the current starting point 
+    // the current starting point
     unsigned int start;
     // the current ending point
     unsigned int end;
@@ -25,19 +25,19 @@ typedef struct
 
 
 /*! \fn  DRingBuffer_create
- * 
+ *
  * new create makes a variable row size malloc of doubles once
- * 
+ *
  * Constructs a dynamic array / matrix of:
- * 
+ *
  * row *  length  = array of array elements
- * 
+ *
  * nested double double buffer[1][2]
- * 
+ *
  * reads in and out row by row
- *  
- * 
-*/ 
+ *
+ *
+*/
 DRingBuffer *DRingBuffer_create(unsigned int length,  unsigned int row  );
 
 void DRingBuffer_destroy(DRingBuffer *buffer);

@@ -23,7 +23,7 @@ LIB_VER=${MAJORVERSION}.${MINORVERSION}-${REVISION}
 
 
 AC_PREREQ([2.69])
-AC_INIT([libringbuffers], m4_esyscmd([build-aux/git-version-gen.sh .version]), [evergent@shaw.ca])
+AC_INIT([libringbuffers], m4_esyscmd([build-aux/git-version-gen.sh .version]), [philosophicaldaemon@gmail.com])
 
 
 AC_DEFUN([AX_DEFINE_SUBST], [
@@ -145,6 +145,9 @@ AC_CHECK_HEADERS([stdlib.h string.h])
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+
+#OUTPUT STAGE
+AC_CONFIG_FILES([Doxyfile])
 AC_CONFIG_FILES([Makefile  src/Makefile])
 AC_OUTPUT
 

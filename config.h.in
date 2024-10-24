@@ -6,11 +6,20 @@
 /* Define to 1 if you have the <atlas/atlas_csysinfo.h> header file. */
 #undef HAVE_ATLAS_ATLAS_CSYSINFO_H
 
+/* Define to 1 if you have the <atlas/blas.h> header file. */
+#undef HAVE_ATLAS_BLAS_H
+
 /* Define to 1 if you have the <atlas/cblas.h> header file. */
 #undef HAVE_ATLAS_CBLAS_H
 
 /* Define to 1 if you have the <atlas/clapack.h> header file. */
 #undef HAVE_ATLAS_CLAPACK_H
+
+/* Define to 1 if you have the <blas.h> header file. */
+#undef HAVE_BLAS_H
+
+/* Define to 1 if you have the <cblas.h> header file. */
+#undef HAVE_CBLAS_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -18,11 +27,32 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+/* Define to 1 if you have the `atlas' library (-latlas). */
+#undef HAVE_LIBATLAS
+
+/* Define to 1 if you have the `blas' library (-lblas). */
+#undef HAVE_LIBBLAS
+
+/* Define to 1 if you have the `blas-atlas' library (-lblas-atlas). */
+#undef HAVE_LIBBLAS_ATLAS
+
+/* Define to 1 if you have the `cblas' library (-lcblas). */
+#undef HAVE_LIBCBLAS
+
+/* Define to 1 if you have the `clapack' library (-lclapack). */
+#undef HAVE_LIBCLAPACK
+
+/* Define to 1 if you have the `lapack_atlas' library (-llapack_atlas). */
+#undef HAVE_LIBLAPACK_ATLAS
+
+/* Define to 1 if you have the `satlas' library (-lsatlas). */
+#undef HAVE_LIBSATLAS
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -42,9 +72,17 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Library complete version */
+#undef LIB_VER
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
+
+/* Library major version */
+#undef MAJORVERSION
+
+/* Library minor version */
+#undef MINORVERSION
 
 /* Name of package */
 #undef PACKAGE
@@ -67,7 +105,12 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Library revision version */
+#undef REVISION
+
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Version number of package */
