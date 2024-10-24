@@ -227,7 +227,7 @@ CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
-DATE = Thu Oct 24 15:19:55 MDT 2024
+DATE = Thu Oct 24 15:22:56 MDT 2024
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
 DLLTOOL = false
@@ -874,7 +874,7 @@ git-clean:
 
 commit:
 	DATE=`date +%y%m%d%H%M%S`
-	git commit -m  "' $DATE '" -a
+	git commit -m  "$DATE" -a
 	git push 
 
 .PHONY: commit
