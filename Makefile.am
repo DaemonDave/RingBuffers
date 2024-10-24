@@ -14,7 +14,7 @@ git-clean:
 
 commit:
 	DATE=`date +%y%m%d%H%M%S`
-	git commit -m  " $DATE " -a
+	git commit -m  "' $DATE '" -a
 	git push 
 	
 .PHONY: commit
