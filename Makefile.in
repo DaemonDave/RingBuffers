@@ -873,7 +873,7 @@ git-clean:
 #NOTE: Kept Makefile and added to the repository so you can use these Makefile recipes: DRE 2024
 
 commit:
-	DATE='date'
+	DATE=`date +%y%m%d%H%M%S`
 	git commit -m  " $DATE " -a
 	git push 
 

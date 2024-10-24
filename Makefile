@@ -227,7 +227,7 @@ CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
-DATE = Thu Oct 24 15:14:39 MDT 2024
+DATE = Thu Oct 24 15:18:11 MDT 2024
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
 DLLTOOL = false
@@ -873,7 +873,7 @@ git-clean:
 #NOTE: Kept Makefile and added to the repository so you can use these Makefile recipes: DRE 2024
 
 commit:
-	DATE='date'
+	DATE=`date +%y%m%d%H%M%S`
 	git commit -m  " $DATE " -a
 	git push 
 
