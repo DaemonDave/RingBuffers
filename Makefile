@@ -160,8 +160,8 @@ am__define_uniq_tagged_files = \
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Doxyfile.in $(srcdir)/Makefile.in \
 	$(srcdir)/config.h.in AUTHORS COPYING ChangeLog INSTALL NEWS \
-	README ar-lib compile config.guess config.sub install-sh \
-	ltmain.sh missing
+	README ar-lib compile config.guess config.sub depcomp \
+	install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -874,7 +874,7 @@ git-clean:
 
 commit:
 	DATE=`date +%y%m%d%H%M%S`
-	git commit -m  "$DATE" -a
+	git commit -m  $DATE -a
 	git push 
 
 .PHONY: commit
