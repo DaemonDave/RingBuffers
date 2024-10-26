@@ -43,16 +43,15 @@ static uint32_t debug_flag = 0;
 static uint32_t testid = 0;
 static uint32_t mutex_flag = 0;
 static uint32_t cnt_events = 10000;
-static bool log_flag = false;
+//! \note default log flag is false
+//static bool log_flag = false;
+static bool log_flag = true;
 //! \var g_max_entries is the global max number of entries - it can be checked on during operations or at the end
 static size_t g_max_entries = 0;
 #define ARRAY_SIZE(arr)  (sizeof(arr)/sizeof(arr[0]))
 #define INVALID_EL (0xffffffff)
-
 ///
 #define VERSION_STR 0.1
-
-
 /*
  * Producer sends this element immediately before exitting
  * Consumer deq this element and exits
@@ -257,7 +256,7 @@ char * payload_sprintf( payload_t * out )
     //a = b = c = d = e = f = g = h = i = j = 0;
     return entry;
 }
-/// \def PAYLOADCOPY for a simple one to one copy
+/// \def PAYLOADCOPY for a simple one to one copy that assumes memory doesn't overlap...
 #define PAYLOADCOPY(dst,src) memcpy(dst,src, sizeof(payload_t))
 /**
  * struct sq - simple queue
@@ -311,18 +310,18 @@ typedef struct sq
     //! \var max is an absolute for the total possible
     buf_t * max;
     //
-    /// \note pointers are volatie and he accesses them unwittingly in his code so I put vars below to avoid overwrite
-    /// \note knowing that
+    /// \note pointers are volatile and David T.'s accesses them unwittingly in his code so I put var placeholder below 
+    /// \note to avoid overwrite knowing that
     //
     //! \var placeholder is a protection against accidental overwrites above,,,
-    buf_t * placeholder;  // gives an overwrite buffer
+    buf_t * placeholder;  // gives an overwrite buffer one 8 byte spacer
     //! \var count modified to actual count - he got lazy and that's why portability wasn't there...
     size_t count;	// an absolute not a reference - but what he didn't use is it can be added as a simple offset if needed
     //! \var buffer_width is an unsure variable  added while trying to get the others to work
     size_t buffer_width; // in sizeof value
     //! \note I have left callback and it can be replaced
     //! \var cb is the local callback that David T. used for debugging it must have a function that printfs out the actual contents of the buffer.
-    void (*cb)(const buf_t *);
+    void (*cb)(const buf_t *);//
 } sq_t;
 /**
  * rb_test - test ring buffer using sq_t
@@ -345,7 +344,7 @@ static sq_t rb_test =
     .first = rb_test.bufs,
     .last = &rb_test.bufs[ARRAY_SIZE(rb_test.bufs)-1],// declared as last entry
     .max = ARRAY_SIZE(rb_test.bufs),
-    .cb = buf_debug, // never used
+    .cb = buf_debug, // never used - this was David T.'s original debug
 };
 /// \fn Init_sq initializes every bufs buffer slot to the maximum size BUFFER_SIZE
 void Init_sq ( sq_t * rb )
@@ -546,9 +545,6 @@ void q_enq(sq_t* sqp, buf_t val)
     /// if (debug_flag)
     //  printf("q_enq enter count=%d val=%s enq=%s deq=%s sqp->last=%p sqp->first=%p \n", sqp->count, payload_sprintf((payload_t *)&val), payload_sprintf((payload_t *)sqp->enq), payload_sprintf((payload_t *)sqp->deq), sqp->last, sqp->first);
     /// OLD CODE
-    /// enqueue value into buf
-    ///*(sqp->enq) = val;
-    //
     /// NEW CODE - copy IN FROM external variable
     //
     memcpy( &sqp->enq, val, BUFFER_SIZE );/// NEW COPY INTO START OF STRUCT NO MATTER SIZE
@@ -653,9 +649,6 @@ int q_deq(sq_t* sqp, buf_t* valp)
     // CRITICAL CODE - THE ACTUAL PURPOSE OF DEQUEUE FCN
     ///
     /// ORIGINAL CODE
-    /* fill value with bufs entry data */
-    ///*valp = *(sqp->deq);  // COPY OF AN NUMBER IS LIMIT FOR ORIGINAL THIS EFFORT
-    //
     /// NEW CODE - copy out to external variable
     //
 /// void *memcpy(void dest[restrict .n], const void src[restrict .n], size_t n);
@@ -719,8 +712,7 @@ int q_deq(sq_t* sqp, buf_t* valp)
  *
  * Return: NULL
  */
-void*
-q_producer_ut(void *arg)
+void* q_producer_ut(void *arg)
 {
     int base_idx = 0;  /* a unique number to differentiate q_enq entries */
     void (*fnenq)(sq_t*, buf_t) = q_enq;
@@ -769,8 +761,7 @@ void *q_producer_empty(void *arg)
  *
  * See q_producer for doc.
  */
-void
-*q_producer_stress2(void *arg)
+void *q_producer_stress2(void *arg)
 {
     int base_idx = 0;  /* a unique number to differentiate q_enq entries */
 #ifdef BARRIER
@@ -801,8 +792,7 @@ void
  *
  * See q_producer for doc.
  */
-void
-*q_producer_stress3(void *arg)
+void *q_producer_stress3(void *arg)
 {
     int base_idx = 0;  /* a unique number to differentiate q_enq entries */
     fprintf(stderr, "%s: a dynamically sized stress test sending %u events\n",
@@ -1018,8 +1008,6 @@ int main(int argc, char *argv[])
     else
         payload_printf( tbuffer );
 
-
-
     ts_end();
     fprintf(stderr, "elapsed time from before first pthread_create to after last pthread_join: %s\n", ts_delta());
     if (log_flag)
@@ -1037,7 +1025,7 @@ int main(int argc, char *argv[])
     }
 
     /// NEW DECONSTRUCTION
-    //Destroy_sq ( &rb_test );
+    //Destroy_sq ( &rb_test ); // can't deconstruct a heap allocated static struct so for stack loaded only
     free(tbuffer);
 
 }

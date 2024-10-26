@@ -15,7 +15,10 @@
 #define ARRAY_SIZE(arr)  (sizeof(arr)/sizeof(arr[0]))
 
 pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
-
+//! \fn fp is a local OS file pointer for file stream I/O
+FILE * fp;
+//! \def LOG_FILE for a local file
+#define LOG_FILE "log_queue_evt.log"
 /**
  * define the logrec, typedef to buf_t
  */
@@ -38,14 +41,15 @@ typedef struct logrec
  * Probably should refactor both ringbuffer structures into a generic one and
  * then have convert bufs to a pointer, which can point to a custom statically
  * allocated array.
+ * 
+ * DRE2024 - no problem with keeping unique ring buffer types they're very small structs with minimal housekeeping...
  */
 typedef struct qlog
 {
-    buf_t bufs[LOG_QDEPTH];
+    buf_t bufs[LOG_QDEPTH];// fixed size allocated on heap not stack
     buf_t *enq;
     buf_t *deq;
-    int32_t count;
-
+    int32_t count;// See? in this modified version David T. correctly uses an integer not a pointer to an integer as the counter..
     buf_t *first;
     buf_t *last;
     int32_t max;
@@ -65,7 +69,6 @@ static qlog_t logevt =
     .last = &logevt.bufs[ARRAY_SIZE(logevt.bufs)-1],
     .max = ARRAY_SIZE(logevt.bufs),
 };
-
 /**
  * evt_enq - enqueue a log element
  * @id: the event id enum defined in logevt.h
@@ -133,12 +136,12 @@ int evt_deq(buf_t *recp)
     pthread_mutex_unlock(&log_mutex);
     return (0);
 }
-
+//! \def TV_FMT is the time printf format
+#define TV_FMT "%ld.%06ld"
 /**
- * print_evts - dequeue all logger elements and write to stdout
+ * \fn print_evts - dequeue all logger elements and write to stdout
  *
  */
-#define TV_FMT "%ld.%06ld"
 void print_evts(void)
 {
     buf_t rec;
@@ -163,6 +166,9 @@ void print_evts(void)
         case EVT_DEQ_IDLE:
             strcpy(evtid, "deq rb empty");
             break;
+        case EVT_MAX_QUEUE:// added event that queue reached a new maximum value in the global
+            strcpy(evtid, "MaxQ:");
+            break;
         default:
             strcpy(evtid, "???");
             break;
@@ -185,5 +191,73 @@ void print_evts(void)
                rec.tstamp.tv_nsec);
     }
     fprintf(stderr, "total log records = %d\n", idx);
+}
+/**
+ * \fn fprint_evts - dequeue all logger elements and write to file pointer fp
+ * DRE 2024 - MODIFIED FROM ABOVE 
+ *
+ */
+void fprint_evts(void)
+{
+    buf_t rec;
+    int idx = 0;
+    char evtid[64];
+    char evtval[64];
+    // fopen file in append mode for longer, persistent log files like over several 
+    if (fp = fopen(LOG_FILE, "a+" ))// if  file open failed
+    {
+		fprintf(stderr, "FAILED: failed opening log file at %s in %s\n", __FILE__, __func__);// Unix Way: Fail loudly...
+		// just fail and return from fcn call
+		return;
+	}
+    fprintf(fp, "dumping log\n");
+    /* loop until all events are dequeued
+     * starting from oldest and ending at newest
+     */
+    while (0 == evt_deq(&rec))
+    {
+        /* convert record id (event type enum) to a string */
+        switch (rec.id)
+        {
+        case EVT_ENQ:
+            strcpy(evtid, "enq");
+            break;
+        case EVT_DEQ:
+            strcpy(evtid, "deq");
+            break;
+        case EVT_DEQ_IDLE:
+            strcpy(evtid, "EmptyQ:");///
+            break;
+        case EVT_MAX_QUEUE:// added event that queue reached a new maximum value in the global
+            strcpy(evtid, "NMQ:");// New Max Queue
+            break;
+        case EVT_END:// added event that queue reached a new maximum value in the global
+            strcpy(evtid, "EndQ:");// End Queue
+            break;
+        default:
+            strcpy(evtid, "???");
+            break;
+        }
+        /* convert val to a string */
+        switch (rec.val)
+        {
+        case 0xdeadbeef:
+            strcpy(evtval, "END_EL");
+            break;
+        default:
+            sprintf(evtval, "val=%u", rec.val);
+            break;
+        }
+        fprintf(fp, "%d: %s %s time=" TV_FMT "\n",
+               idx++,
+               evtid,
+               evtval,
+               rec.tstamp.tv_sec,
+               rec.tstamp.tv_nsec);
+    }
+    fprintf(fp, "total log records = %d\n", idx);
+    // now flush file before closing
+    fflush(fp);
+    
 }
 
