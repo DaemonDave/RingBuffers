@@ -204,60 +204,68 @@ void fprint_evts(void)
     char evtid[64];
     char evtval[64];
     // fopen file in append mode for longer, persistent log files like over several 
-    if (fp = fopen(LOG_FILE, "a+" ))// if  file open failed
+    fp = fopen(LOG_FILE, "a+" );
+    if (fp == NULL)// if  file open failed
     {
-		fprintf(stderr, "FAILED: failed opening log file at %s in %s\n", __FILE__, __func__);// Unix Way: Fail loudly...
+		// see https://www.man7.org/linux/man-pages/man3/errno.3.html for why there's a temporary variable here... DRE 2024
+		int errsv = errno; //! \var errsv saves the error - immediate save before kernel overwrites errno 
+		fprintf(stderr, "FAILED: %s failed opening log file at %s in %s\n", strerror(errsv), __FILE__, __func__);// Unix Way: Fail loudly...
 		// just fail and return from fcn call
 		return;
 	}
-    fprintf(fp, "dumping log\n");
-    /* loop until all events are dequeued
-     * starting from oldest and ending at newest
-     */
-    while (0 == evt_deq(&rec))
-    {
-        /* convert record id (event type enum) to a string */
-        switch (rec.id)
-        {
-        case EVT_ENQ:
-            strcpy(evtid, "enq");
-            break;
-        case EVT_DEQ:
-            strcpy(evtid, "deq");
-            break;
-        case EVT_DEQ_IDLE:
-            strcpy(evtid, "EmptyQ:");///
-            break;
-        case EVT_MAX_QUEUE:// added event that queue reached a new maximum value in the global
-            strcpy(evtid, "NMQ:");// New Max Queue
-            break;
-        case EVT_END:// added event that queue reached a new maximum value in the global
-            strcpy(evtid, "EndQ:");// End Queue
-            break;
-        default:
-            strcpy(evtid, "???");
-            break;
-        }
-        /* convert val to a string */
-        switch (rec.val)
-        {
-        case 0xdeadbeef:
-            strcpy(evtval, "END_EL");
-            break;
-        default:
-            sprintf(evtval, "val=%u", rec.val);
-            break;
-        }
-        fprintf(fp, "%d: %s %s time=" TV_FMT "\n",
-               idx++,
-               evtid,
-               evtval,
-               rec.tstamp.tv_sec,
-               rec.tstamp.tv_nsec);
-    }
-    fprintf(fp, "total log records = %d\n", idx);
-    // now flush file before closing
-    fflush(fp);
-    
+	else
+	{
+		// output time and date to start...
+		fprintf(fp, "%s:%s:\n" __DATE__, __TIME__);
+		/* loop until all events are dequeued
+		 * starting from oldest and ending at newest
+		 */
+		while (0 == evt_deq(&rec))
+		{
+			/* convert record id (event type enum) to a string */
+			switch (rec.id)
+			{
+			case EVT_ENQ:
+				strcpy(evtid, "enq");
+				break;
+			case EVT_DEQ:
+				strcpy(evtid, "deq");
+				break;
+			case EVT_DEQ_IDLE:
+				strcpy(evtid, "EmptyQ:");///
+				break;
+			case EVT_MAX_QUEUE:// added event that queue reached a new maximum value in the global
+				strcpy(evtid, "NMQ:");// New Max Queue
+				break;
+			case EVT_END:// added event that queue reached a new maximum value in the global
+				strcpy(evtid, "EndQ:");// End Queue
+				break;
+			default:
+				strcpy(evtid, "???");
+				break;
+			}
+			/* convert val to a string */
+			switch (rec.val)
+			{
+			case 0xdeadbeef:
+				strcpy(evtval, "END_EL");
+				break;
+			default:
+				sprintf(evtval, "val=%u", rec.val);
+				break;
+			}
+			fprintf(fp, "%d: %s %s time=" TV_FMT "\n",
+				   idx++,
+				   evtid,
+				   evtval,
+				   rec.tstamp.tv_sec,
+				   rec.tstamp.tv_nsec);
+		}
+		fprintf(fp, "total log records = %d\n", idx);
+		// now flush file before closing
+		fflush(fp);
+		fclose(fp);
+	}
+    // if there wasn't a file open, then do nothing...
 }
 

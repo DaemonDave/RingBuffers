@@ -715,6 +715,9 @@ int q_deq(sq_t* sqp, buf_t* valp)
 void* q_producer_ut(void *arg)
 {
     int base_idx = 0;  /* a unique number to differentiate q_enq entries */
+/// NEW CODE
+    buf_t * val = (buf_t *)( arg ); /// recast the function parameter as a payload_t
+    
     void (*fnenq)(sq_t*, buf_t) = q_enq;
 #ifdef BARRIER
     pthread_barrier_wait(&barrier);
@@ -730,7 +733,6 @@ void* q_producer_ut(void *arg)
     fnenq(&rb_test, END_EL);
     return (NULL);
 }
-
 /*
  * q_producer_empty - a minimal test of the producer/consumer
  *
@@ -738,24 +740,20 @@ void* q_producer_ut(void *arg)
  */
 void *q_producer_empty(void *arg)
 {
-/// NEW CODE
-    buf_t val = malloc( BUFFER_SIZE ); /// just allocate
-    memcpy(&val, END_EL, sizeof(END_EL));
+	/// NEW CODE
+	// type casts the pthread argument into a buf_t
+	//
+    buf_t * val = (buf_t *)( arg ); /// recast the function parameter as a payload_t
 #ifdef BARRIER
     pthread_barrier_wait(&barrier);
 #endif
     fprintf(stderr, "%s: a single q_enq\n", __FUNCTION__);
     /* single enq to start consumer */
-    q_enq(&rb_test, &val);
-    /// NEW CODE
-    memcpy(&val, END_EL, sizeof(END_EL));
-
+    q_enq(&rb_test, val);
     /* end of enqueue */
-    q_enq(&rb_test, END_EL);
+    // REMOVED last enqueue
     return (NULL);
 }
-
-
 /**
  * q_producer_stress2 - a relatively short stress test of the ringbuffer
  *
@@ -764,6 +762,11 @@ void *q_producer_empty(void *arg)
 void *q_producer_stress2(void *arg)
 {
     int base_idx = 0;  /* a unique number to differentiate q_enq entries */
+	/// NEW CODE
+	// type casts the pthread argument into a buf_t
+	//
+    buf_t * val = (buf_t *)( arg ); /// recast the function parameter as a payload_t
+    
 #ifdef BARRIER
     pthread_barrier_wait(&barrier);
 #endif
@@ -771,22 +774,29 @@ void *q_producer_stress2(void *arg)
     /* stress enq loop */
     for (int j=0; j<20; j++)
     {
-        for (int i=1; i<QDEPTH; i++)
-            q_enq(&rb_test, base_idx+i);
+        for (int i=1; i<30; i++)///  QDEPTH used in original
+        {
+			// set a novel float into the a value...
+			payload_set2 ( (payload_t *) arg, 1.0, (float)base_idx+i );
+            q_enq(&rb_test, arg);// enque 
+        }// end inner for
         base_idx += 100;
-    }
-    /* make inner loop bigger */
-    for (int j=0; j<20; j++)
-    {
-        for (int i=1; i<128; i++)
-            q_enq(&rb_test, base_idx+i);
-        base_idx += 100;
-    }
+    }// end outer for
+//    /* make inner loop bigger */
+//    for (int j=0; j<20; j++)
+//    {
+//        for (int i=1; i<128; i++)
+//        {
+//			// set a novel float into the a value...
+//			payload_set1 ( (payload_t *) arg, (float)base_idx+i );
+//            q_enq(&rb_test, arg);// enqueue 
+//        }
+//        base_idx += 100;
+//    }
     /* end of enqueue */
-    q_enq(&rb_test, END_EL);
+	/// removed old code
     return (NULL);
 }
-
 /*
  * q_producer_stress3 - a long stress test of the ringbuffer
  *
@@ -795,18 +805,23 @@ void *q_producer_stress2(void *arg)
 void *q_producer_stress3(void *arg)
 {
     int base_idx = 0;  /* a unique number to differentiate q_enq entries */
-    fprintf(stderr, "%s: a dynamically sized stress test sending %u events\n",
-            __FUNCTION__, cnt_events);
+	/// NEW CODE
+	// type casts the pthread argument into a buf_t
+	//
+    buf_t * val = (buf_t *)( arg ); /// recast the function parameter as a payload_t
+    fprintf(stderr, "%s: a dynamically sized stress test sending %u events\n", __FUNCTION__, cnt_events);
     /* stress enq loop */
     for (int i=0; i<cnt_events; i++)
     {
-        q_enq(&rb_test, base_idx+i);
-    }
+		// set a novel float into the a value...
+		payload_set3 ( (payload_t *) arg, -1.0, -99.0, (float)base_idx+i );
+        q_enq(&rb_test, arg);// enque 
+    }    
+	/// removed old code
     /* end of enqueue */
-    q_enq(&rb_test, END_EL);
+	//
     return (NULL);
 }
-
 /**
  * q_consumer: pthread to call q_deq
  * @arg: pthread arguments passed from pthread_create (not used)
@@ -825,12 +840,17 @@ void *q_producer_stress3(void *arg)
  * enq but that just seemed to unnecessarily slow down operations.
  * I experimented with a pthread barrier wait so producer/consumer start at roughly
  * the same time but this appears to be unnecesasry.
- *
+ * 
+ *  consumes all data payloads on the queue list
  */
 void* q_consumer(void *arg)
 {
     int done = 0;
-    buf_t val = malloc( BUFFER_SIZE ); /// just allocate
+	/// NEW CODE
+	// type casts the pthread argument into a buf_t
+	//
+    buf_t * val = (buf_t *)( arg ); /// recast the function parameter as a payload_t
+
     int idlecnt = 0;
     int (*fndeq)(sq_t*, buf_t*) = q_deq; /* use a fn pointer for easy management */
 #ifdef BARRIER
@@ -838,12 +858,23 @@ void* q_consumer(void *arg)
 #endif
     if (debug_flag)
         printf("%s: starting\n", __FUNCTION__);
+    //
+    /// David T.'s terrible naive consumer - there's no error checking in a perpetual consumer that might need to exit
+    //
+    /// Remember - when you are coding servers the reply may have been stopped because an asteroid fell on the remote host.
     /* race condition busy-wait until producer enqueues something
      */
-    while (fndeq(&rb_test, &val))
+    int result =0; // new conditional variable
+    //
+    /// NEW CODE - EXPANDED TO FULL DO WHILE LOOP...
+    //
+    do
     {
+		// result checking
+		result = (fndeq(&rb_test, val));// consume always but too cutesy
         idlecnt++;
     }
+    while ( result != -1);// now consume always exits when empty queue so race condition isn't maxxed out.
     if (log_flag)
     {
         /* log how many idle loops before producer starts writing to queue */
@@ -853,7 +884,7 @@ void* q_consumer(void *arg)
     /* loop until the producer sends the END element */
     while (!done)
     {
-        if (0 == fndeq(&rb_test, &val))
+        if (0 == fndeq(&rb_test, val))
         {
             if (val == END_EL)
                 done = 1;
@@ -883,35 +914,60 @@ void* q_consumer(void *arg)
 int main(int argc, char *argv[])
 {
     int opt;
-    pthread_t producer, consumer;
-    void* (*fn_producer)(void *arg);
-    void* (*fn_consumer)(void *arg);
+    pthread_t producer, consumer;		// David T.'s two thread stressors
+    void* (*fn_producer)(void *arg); 	// pointer to function of a pthread-safe kind...
+    void* (*fn_consumer)(void *arg);	// 
 
+	// sending into a thread a buffer type which is just a pointer masquerading as a type
     buf_t tbuffer;
+    // buffer of a payload_t type size that is large enough 
     tbuffer = (buf_t)malloc(sizeof(payload_t)); // a generic payload type is the same as the specific buffer
-    payload_t data1;
+    //
+    /// generic data structs 
+    //
+    payload_t data1; // allocated on heap but not initialized as is.
     payload_t data2;
-
+    payload_t data3;
+    // data4 is the ultimate consumer data destination
+    payload_t data4;
+	// first version has heap allocated only
+	///
+	// Initializing payloads for traffic
+	///
     //! initialize the payload 1 & 2
     // 1 is the enqueue entry
-    payload_init( &data1 );
-    // 2 is the dequeue entry - as per David T's terminology
+    payload_init( &data1 );  // payload_init byte zeros all data
+    
+    // 2 is the enqueue entry - as per David T's terminology
     payload_init( &data2 );
+    // 3 is the enqueue entry - as per David T's terminology
+    payload_init( &data3 );
+    // 4 is the dequeue entry - as per David T's terminology
+    payload_init( &data4 );  // zeroed but not initialized
+    
     // set 3 in data1
     payload_set3 ( &data1, 1.4, 10.5, -12.6  );
+    // set 3 in data2
+    payload_set5 ( &data2, -10.1, -88.4, 100, 200, 600  );
+
     // set 3 in data1
-    payload_set5 ( &data2, -10.1, -88.4, 100, 200, 600  );
-    payload_set5 ( &data2, -10.1, -88.4, 100, 200, 600  );
+    payload_set6 ( &data3, -10.1, -88.4, 100, 200, 600, -1100  );
+    // set but not allocate data pointed at by tbuffer 
     payload_set5 ( tbuffer, -99.0, -99.4, -100, -200, -600  );
-    //
-    payload_printf(  &data1 );
+    // output what these look like to stdout
+    payload_printf(  &data1 ); // passed as address of / pass by reference 
     payload_printf(  &data2 );
+    payload_printf(  &data3 );
+    // &data4 is not 
+    payload_printf(  tbuffer ); // tbuffer passed by value which is a pass by reference.
 
     /* handle commandline options (see usage) */
 
     /// NEW INITIALIZATION - LOCAL SCOPE INIT FOR NOW
+    // 
     Init_sq( &rb_test );
 
+	//! \note argument optins deciphered from command line...
     while ((opt = getopt(argc, argv, "t:c:mlh")) != -1)
     {
         switch (opt)
@@ -930,6 +986,8 @@ int main(int argc, char *argv[])
             break;
         case 'h':
         default:
+			// insert default test number to the least difficult q producer
+			testid = 1;
             fprintf(stderr, "Usage: %s %s\n", argv[0], cmd_arguments);
             exit(0);
         }
@@ -939,49 +997,58 @@ int main(int argc, char *argv[])
         fprintf(stderr, "%s: event logger enabled with -l option\n"    "this signficantly increases the execution time\n", argv[0] );
     else
         fprintf(stderr, "%s: event logger not enabled\n", argv[0]);
+    //
+    /// pthread function selection from command line
+    //
     switch (testid)
     {
-    case 1:
-        fn_producer = q_producer_empty;
-        break;
-    case 2:
-        fn_producer = q_producer_stress2;
-        break;
-    case 3:
-        fn_producer = q_producer_stress3;
-        break;
-    default:
-        fn_producer = q_producer_ut;
-        break;
+		case 1:
+			fn_producer = q_producer_empty;  
+			break;
+		case 2:
+			fn_producer = q_producer_stress2;
+			break;
+		case 3:
+			fn_producer = q_producer_stress3;
+			break;
+		default:
+			fn_producer = q_producer_ut;
+			break;
     }
+    //
+    /// START OF MAIN CODE...
+    //
+    
     /* queue consumer is generic for all tests */
     fn_consumer = q_consumer;
-//  #ifdef BARRIER
-//  /* multithread, separate producer and consumer threads
-//     use a barrier to start them at the same time
-//   */
-//  if (0 != pthread_barrier_init(&barrier, NULL, 2))
-//    die("pthread_barrier_init");
-//  #endif // BARRIER
+#ifdef BARRIER
+  /* multithread, separate producer and consumer threads
+     use a barrier to start them at the same time
+   */
+  if (0 != pthread_barrier_init(&barrier, NULL, 2))
+    die("pthread_barrier_init");
+#endif // BARRIER
 //
 ///  TEST CODE
 //
     ts_start();
-//  if (0 != pthread_create(&producer, NULL, fn_producer, NULL))
-//    die("pthread_create");
-//  if (0 != pthread_create(&consumer, NULL, fn_consumer, NULL))
-//    die("pthread_create");
+  if (0 != pthread_create(&producer, NULL, fn_producer, &data1))
+    die("pthread_create");
+  if (0 != pthread_create(&consumer, NULL, fn_consumer, &data4)) // passing data4 as the repository for data consumed
+    die("pthread_create");
 
 //  /// CRITICAL SECTION - WHERE ACTION IN THREADS HAPPENS
 
-//  /* wait for threads to exit */
-//  pthread_join(producer, NULL);
-//  pthread_join(consumer, NULL);
 
 //  /// TEST SECTION - WHERE ACTION IN THREADS HAPPENS
 
 //
+	///
+	// USING A BUFFER POINTER TO ANOTHER DATA PAYLOAD...
+	///
     buf_t d = (void *) &data2;
+    
+    // RANDOM ENQUEUEING AND DEQUEUEING
     q_enq(&rb_test, d);
     q_enq(&rb_test, &data1);
     q_enq(&rb_test, &data1);
@@ -1008,20 +1075,33 @@ int main(int argc, char *argv[])
     else
         payload_printf( tbuffer );
 
+	/// pthreads are added to the time stamps - ts evaluation
+	/* wait for threads to exit */
+	pthread_join(producer, NULL);
+	
+	// CONSUMER MUST JOIN LAST IT'S STILL CONSUMING DATA UP UNTIL THERE'S NO QUEUE DATA LEFT...
+	pthread_join(consumer, NULL);
+
+	///
+	//  
+	///
     ts_end();
+    
+    
+    
     fprintf(stderr, "elapsed time from before first pthread_create to after last pthread_join: %s\n", ts_delta());
     if (log_flag)
     {
         /* dump all event log records to stdout AFTER the execution timer
          * has stopped. */
-        print_evts();
+        //print_evts(); // replaced with log to file
+        /// NEW CODE
+        fprint_evts(); // replaced with log to file
     }
     if (!mutex_flag)
     {
         fprintf(stderr, "consumer contention lock_held_c=%d "
-                "producer contention lock_held_p=%d\n",
-                lock_held_c,
-                lock_held_p);
+                "producer contention lock_held_p=%d\n", lock_held_c, lock_held_p);
     }
 
     /// NEW DECONSTRUCTION

@@ -1,5 +1,6 @@
 # RingBuffers
-# DRE 2024 - Philosophicaldaemon@gmail.com
+# DRE 2024 - 
+# Contact: Philosophicaldaemon@gmail.com
 
 #Keywords: C, ringbuffer, ring buffer, enqueue, dequeue, linked list, elements, pointers, events, pthread, mutexes.
 
@@ -35,7 +36,8 @@ Concept: changing the organization of the basic types and structs to make that i
 #How to make: use the autotools installed with the code :
 autoconf, automake, libtools, aclocal, make and so on...
 
-# github Makefile recipes: This repository comes included with git commands as Makefile recipes in order to allow novice github users can contribute easier. 
+#github Makefile recipes: 
+This repository comes included with git commands as Makefile recipes in order to allow novice github users can contribute easier. 
 
 Look in Makefile.am for the recipes. These make recipes are explained here: http://techdiagnosys.blogspot.com/2015/11/autoversion-under-autoheader-autoconf.html
 
